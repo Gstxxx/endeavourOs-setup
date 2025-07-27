@@ -107,10 +107,171 @@ install_basic_dependencies() {
         "ttf-fira-code"
         "xdg-utils"
         "gnome-tweaks"
+        "gnome-shell-extension-dash-to-dock"
     )
     
     install_packages "${basic_packages[@]}"
     log_success "Dependências básicas instaladas"
+}
+
+# Função para instalar Docker e ferramentas de desenvolvimento
+install_development_tools() {
+    log_step "Instalando Docker e ferramentas de desenvolvimento..."
+    
+    # Docker e Docker Compose
+    local docker_packages=(
+        "docker"
+        "docker-compose"
+        "docker-buildx"
+    )
+    
+    install_packages "${docker_packages[@]}"
+    
+    # Configurar Docker
+    log_info "Configurando Docker..."
+    sudo systemctl enable docker
+    sudo systemctl start docker
+    
+    # Adicionar usuário ao grupo docker
+    if ! groups "$USER" | grep -q docker; then
+        log_info "Adicionando usuário ao grupo docker..."
+        sudo usermod -aG docker "$USER"
+    fi
+    
+    # Ferramentas de desenvolvimento adicionais
+    local dev_packages=(
+        "nodejs"
+        "yarn"
+        "python"
+        "python-pip"
+        "go"
+        "rust"
+        "jdk-openjdk"
+        "maven"
+        "gradle"
+        "postgresql"
+        "redis"
+        "nginx"
+        "apache"
+        "php"
+        "composer"
+        "ruby-bundler"
+        "rbenv"
+        "pyenv"
+    )
+    
+    install_packages "${dev_packages[@]}"
+    
+    # Instalar ferramentas CLI úteis
+    local cli_tools=(
+        "htop"
+        "bat"
+        "fd"
+        "ripgrep"
+        "fzf"
+        "jq"
+        "yay"
+        "httpie"
+        "wget"
+        "tree"
+        "tmux"
+        "screen"
+        "nano"
+        "vim"
+        "neovim"
+        "micro"
+        "lazygit"
+        "tldr"
+        "glow"
+        "exa"
+        "lsd"
+        "procs"
+        "sd"
+        "tealdeer"
+    )
+    
+    install_packages "${cli_tools[@]}"
+    
+    log_success "Ferramentas de desenvolvimento instaladas"
+}
+
+# Função para configurar Docker aliases e configurações
+setup_docker_config() {
+    log_step "Configurando Docker..."
+    
+    # Criar diretório de configuração do Docker
+    mkdir -p "$HOME/.docker"
+    
+    # Configurar Docker daemon (se não existir)
+    if [ ! -f "/etc/docker/daemon.json" ]; then
+        log_info "Configurando Docker daemon..."
+        sudo mkdir -p /etc/docker
+        sudo tee /etc/docker/daemon.json > /dev/null <<EOF
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2",
+  "features": {
+    "buildkit": true
+  }
+}
+EOF
+        sudo systemctl restart docker
+    fi
+    
+    # Adicionar aliases do Docker ao .zshrc
+    if ! grep -q '# Docker aliases' ~/.zshrc; then
+        log_info "Adicionando aliases do Docker..."
+        cat >> ~/.zshrc << 'EOF'
+
+# Docker aliases
+alias d='docker'
+alias dc='docker-compose'
+alias dps='docker ps'
+alias dpsa='docker ps -a'
+alias di='docker images'
+alias dex='docker exec -it'
+alias dlogs='docker logs'
+alias dstop='docker stop'
+alias drm='docker rm'
+alias drmi='docker rmi'
+alias dprune='docker system prune -f'
+alias dclean='docker system prune -a -f'
+alias dvolumes='docker volume ls'
+alias dnetworks='docker network ls'
+
+# Docker Compose aliases
+alias dcup='docker-compose up'
+alias dcupd='docker-compose up -d'
+alias dcdown='docker-compose down'
+alias dcrestart='docker-compose restart'
+alias dclogs='docker-compose logs'
+alias dcbuild='docker-compose build'
+alias dcpull='docker-compose pull'
+
+# Função para limpar Docker completamente
+docker-clean-all() {
+    echo "🧹 Limpando Docker completamente..."
+    docker system prune -a -f --volumes
+    docker builder prune -a -f
+    echo "✅ Docker limpo!"
+}
+
+# Função para verificar status do Docker
+docker-status() {
+    echo "🐳 Status do Docker:"
+    docker info --format '{{.ServerVersion}}' 2>/dev/null || echo "❌ Docker não está rodando"
+    echo "📊 Containers ativos: $(docker ps -q | wc -l)"
+    echo "💾 Imagens: $(docker images -q | wc -l)"
+    echo "🌐 Volumes: $(docker volume ls -q | wc -l)"
+}
+EOF
+    fi
+    
+    log_success "Docker configurado"
 }
 
 # Função para configurar Kitty
@@ -247,6 +408,66 @@ install_additional_tools() {
         curl -sL https://cutt.ly/tran-cli | bash
     fi
     
+    # Instalar ferramentas de desenvolvimento adicionais via npm/yarn
+    if command_exists npm; then
+        log_info "Instalando ferramentas globais do Node.js..."
+        npm install -g @vue/cli create-react-app typescript ts-node nodemon pm2 concurrently
+    fi
+    
+    # Instalar ferramentas Python
+    if command_exists pip; then
+        log_info "Instalando ferramentas Python..."
+        pip install --user black flake8 mypy pytest ipython jupyter
+    fi
+    
+    # Instalar ferramentas Go
+    if command_exists go; then
+        log_info "Instalando ferramentas Go..."
+        go install github.com/cosmtrek/air@latest
+        go install github.com/go-delve/delve/cmd/dlv@latest
+        go install golang.org/x/tools/gopls@latest
+    fi
+    
+    # Instalar ferramentas Rust
+    if command_exists cargo; then
+        log_info "Instalando ferramentas Rust..."
+        cargo install cargo-watch cargo-edit cargo-audit
+    fi
+    
+    # Instalar ferramentas adicionais que não estão no pacman
+    if ! command_exists neofetch; then
+        log_info "Instalando neofetch..."
+        if command_exists yay; then
+            yay -S --noconfirm neofetch
+        elif command_exists paru; then
+            paru -S --noconfirm neofetch
+        else
+            log_warning "Instale yay ou paru para instalar neofetch: yay -S neofetch"
+        fi
+    fi
+    
+    if ! command_exists cheat; then
+        log_info "Instalando cheat..."
+        if command_exists yay; then
+            yay -S --noconfirm cheat
+        elif command_exists paru; then
+            paru -S --noconfirm cheat
+        else
+            log_warning "Instale yay ou paru para instalar cheat: yay -S cheat"
+        fi
+    fi
+    
+    if ! command_exists yq; then
+        log_info "Instalando yq..."
+        if command_exists yay; then
+            yay -S --noconfirm yq
+        elif command_exists paru; then
+            paru -S --noconfirm yq
+        else
+            log_warning "Instale yay ou paru para instalar yq: yay -S yq"
+        fi
+    fi
+    
     log_success "Ferramentas adicionais instaladas"
 }
 
@@ -289,6 +510,8 @@ show_final_instructions() {
     echo "3. Para usar Alt+Enter como atalho, adicione ao seu WM:"
     echo "   - i3: bindsym Mod1+Return exec kitty"
     echo "   - sxhkd: alt + Return → kitty"
+    echo "4. Ative o Dash to Dock: gnome-extensions enable dash-to-dock@micxgx.gmail.com"
+    echo "5. Faça logout e login para aplicar as mudanças do Docker"
     
     echo -e "\n${YELLOW}🔧 Ferramentas instaladas:${NC}"
     echo "• Kitty (terminal)"
@@ -297,6 +520,18 @@ show_final_instructions() {
     echo "• colorls/eza (ls colorido)"
     echo "• secman (gerenciador de segredos)"
     echo "• tran (tradutor CLI)"
+    echo "• Docker + Docker Compose"
+    echo "• Node.js, Python, Go, Rust, Java"
+    echo "• PostgreSQL, Redis, MongoDB"
+    echo "• Ferramentas CLI: bat, fd, ripgrep, fzf, etc."
+    echo "• Dash to Dock (GNOME)"
+    
+    echo -e "\n${PURPLE}🐳 Comandos Docker úteis:${NC}"
+    echo "• dcup - docker-compose up"
+    echo "• dps - docker ps"
+    echo "• dex - docker exec -it"
+    echo "• docker-status - verificar status"
+    echo "• docker-clean-all - limpar tudo"
     
     echo -e "\n${PURPLE}✨ Use Alt + Enter no seu WM para abrir o Kitty!${NC}\n"
 }
@@ -323,6 +558,8 @@ main() {
     setup_kitty
     setup_zsh
     install_zsh_plugins
+    install_development_tools
+    setup_docker_config
     install_additional_tools
     setup_aliases
     
