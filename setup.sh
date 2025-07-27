@@ -6,7 +6,7 @@ echo "🔧 Atualizando pacotes..."
 sudo pacman -Syu --noconfirm
 
 echo "📦 Instalando dependências básicas..."
-sudo pacman -S --noconfirm curl git zsh ruby npm cmatrix kitty ttf-fira-code xdg-utils
+sudo pacman -S --noconfirm curl git zsh ruby npm cmatrix kitty ttf-fira-code xdg-utils gnome-tweaks
 
 # Instalação da fonte Fira Code já incluída acima
 echo "🔤 Fonte Fira Code instalada com sucesso."
@@ -145,4 +145,4 @@ else
     echo "⚠️ Para aplicar as mudanças, execute 'zsh' ou reinicie o terminal."
 fi
 
-echo -e "\n🎉 Terminal pronto com Kitty, PowerLevel10k e Fira Code! Use \033[1mAlt + Enter\033[0m no seu WM para abrir o Kitty.\n"
+echo -e "\n🎉 Terminal pronto com Kitty, PowerLevel10k, Fira Code e GNOME Tweaks! Use \033[1mAlt + Enter\033[0m no seu WM para abrir o Kitty.\n"
