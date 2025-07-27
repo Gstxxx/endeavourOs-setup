@@ -2,6 +2,24 @@
 
 set -e
 
+# Logo do projeto
+cat << "EOF"
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║    ███████╗███████╗████████╗██╗   ██╗██████╗  ██████╗       ║
+║    ██╔════╝██╔════╝╚══██╔══╝██║   ██║██╔══██╗██╔═══██╗      ║
+║    ███████╗█████╗     ██║   ██║   ██║██║  ██║██║   ██║      ║
+║    ╚════██║██╔══╝     ██║   ██║   ██║██║  ██║██║   ██║      ║
+║    ███████║███████╗   ██║   ╚██████╔╝██████╔╝╚██████╔╝      ║
+║    ╚══════╝╚══════╝   ╚═╝    ╚═════╝ ╚═════╝  ╚═════╝       ║
+║                                                              ║
+║           🚀 Setup do endeavourOS - Ambiente Dev 🚀         ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+EOF
+
+echo ""
+
 echo "🔧 Atualizando pacotes..."
 sudo pacman -Syu --noconfirm
 
@@ -26,17 +44,24 @@ if command -v xdg-mime >/dev/null 2>&1; then
     xdg-mime default kitty.desktop x-scheme-handler/terminal
 fi
 
-# 🔠 Configura o Kitty com fonte Fira Code
+# 🔠 Configura o Kitty com configuração personalizada
 KITTY_CONF_DIR="$HOME/.config/kitty"
 mkdir -p "$KITTY_CONF_DIR"
 
-cat > "$KITTY_CONF_DIR/kitty.conf" <<EOF
+# Copia o arquivo de configuração personalizado do kitty
+if [ -f "dot-files/kitty.conf" ]; then
+    echo "📁 Copiando configuração personalizada do Kitty..."
+    cp "dot-files/kitty.conf" "$KITTY_CONF_DIR/kitty.conf"
+else
+    echo "⚠️ Arquivo dot-files/kitty.conf não encontrado. Criando configuração padrão..."
+    cat > "$KITTY_CONF_DIR/kitty.conf" <<EOF
 font_family      FiraCode Nerd Font
 bold_font        auto
 italic_font      auto
 font_size        12.0
 enable_audio_bell no
 EOF
+fi
 
 # ⌨️ Atalho ALT+Enter para abrir o kitty
 AUTOSTART_DIR="$HOME/.config/autostart"
